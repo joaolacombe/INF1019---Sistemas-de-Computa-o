@@ -1,0 +1,37 @@
+Escalonamento escolhido: LISTA DE PRIORIDADES
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa7
+Pid: 629
+Prioridade: 2
+---------------
+
+Em execucao - programa programa7
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa1
+Pid: 630
+Prioridade: 1
+---------------
+
+Em execucao - programa programa1
+Programa programa1 terminou sua execução...
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa2
+Pid: 631
+Prioridade: 3
+---------------
+
+Em execucao - programa programa7
+Em execucao - programa programa7
+Em execucao - programa programa7
+Programa programa7 terminou sua execução...
+
+Em execucao - programa programa2
+Programa programa2 terminou sua execução...
+

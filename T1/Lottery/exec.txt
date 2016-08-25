@@ -1,0 +1,5 @@
+exec programa1 numtickets= 4
+exec programa2 numtickets= 4
+exec programa3 numtickets= 4
+exec programa4 numtickets= 4
+exec programa5 numtickets= 4

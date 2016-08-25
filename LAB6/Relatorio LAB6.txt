@@ -1,0 +1,211 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Aluno: João Pedro Garcia
+Matricula: 1211768
+
+Lab 6
+_____
+Enunciado:
+Exercício
+1. Abra duas seções de terminais! 
+Na primeira, execute um programa que fica em loop lendo de uma FIFO para depois escrever nasaída padrão (tela)! 
+Na segunda, execute um programa que fica lendo da entrada padrão (teclado) e depois escreve na mesma FIFO 
+
+
+Execução:
+(Primeiro Terminal)
+gcc -o CriadorFifo CriadorFifo.c
+gcc -o LeitorFifo LeitorFifo.c
+gcc -o EscritorFifo EscritorFifo.c
+./CriadorFifo
+./LeitorFifo
+(Segundo Terminal)
+./EscritorFifo
+Teste 123
+PUC RIO
+PARA
+
+Saída: (Primeiro Terminal)
+FIFO criada com sucesso
+Lido fifo: Teste 123
+Lido fifo: PUC RIO
+
+Reflexão/Justificativa:
+O primeiro programa cria o fifo chamado "meuFifo", o LeitorFifo da um open para READ ONLY e da read, o que bloqueia a thread até que alguem escreva alguma coisa no FIFO. Ao executar o EscritorFifo ele da open para write e fica lendo do teclado até receber "PARA". O programa mesmo dando close no fifo não "fecha" o fifo feito pelo CriadorFifo, é necessario dar um rm no "meuFifo".
+
+Codigo Fonte:
+
+//CriadorFifo
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#define OPENMODE O_RDONLY
+#define TRUE 1
+
+int main (void) {
+	int fifo;
+	char c[100];
+
+	if ((fifo = open("minhaFifo", OPENMODE)) < 0) { 
+		puts ("Erro ao abrir a FIFO para escrita"); 
+		return -1; 
+	} 
+
+	while (read(fifo, c, 100*sizeof(char)) > 0) {
+		printf("Lido Fifo: %s\n",c);
+	}
+	close (fifo);
+	return 0;
+}
+
+
+
+//LeitorFifo
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#define OPENMODE O_RDONLY
+#define TRUE 1
+
+int main (void) {
+	int fifo;
+	char c[100];
+
+	if ((fifo = open("minhaFifo", OPENMODE)) < 0) { 
+		puts ("Erro ao abrir a FIFO para escrita"); 
+		return -1; 
+	} 
+
+	while (read(fifo, c, 100*sizeof(char)) > 0) {
+		printf("Lido Fifo: %s\n",c);
+	}
+	close (fifo);
+	return 0;
+}
+
+
+
+//EscritorFifo
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+#define OPENMODE O_WRONLY
+#define TRUE 1
+
+int main (void) {
+	int fifo;
+	char c[100];
+
+	if ((fifo = open("minhaFifo", OPENMODE)) < 0) { 
+		puts ("Erro ao abrir a FIFO para escrita"); 
+		return -1; 
+	} 
+
+	while (TRUE) {
+		//scanf("%s", c);
+		gets(c);
+		if(strcmp("PARA",c) == 0) break;
+		write(fifo, c, strlen(c));  
+	}
+	close (fifo);
+	return 0;
+}
+
+_____
+Enunciado:
+Escreva um programa que primeiro cria uma FIFO e em seguida cria dois processos filho que escrevem uma string na FIFO.
+O pai dá um waitpid em seguida lê as strings desse FIFO e exibe na tela
+
+Execução:
+gcc -o LAB6-EX2 LAB6-EX2.c
+./LAB6-EX2
+
+Saída:
+FIFO criada com sucesso
+Escrito primeira msg no FIFO
+Escrito segunda msg no FIFO
+Lido do Fifo: PRIMEIRO FILHO
+Lido do Fifo: SEGUNDO FILHO
+
+Reflexão/Justificativa:
+Tive um problema porque eu dava waitpid antes do open no processo pai, eai entrava em deadlock, os filhos esperavam o pai dar open e o pai esperava os filhos terminarem. Para rodar o programa mais de uma vez é necessario deletar o FIFO porque se não o programa vai tentar cria-lo e dar erro.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+
+int main (void) { 
+
+ 	if (mkfifo("minhaFifo2", S_IRUSR | S_IWUSR) == 0) { 
+		puts ("FIFO criada com sucesso"); 
+	} 
+	else {
+		puts ("Erro na criação da FIFO"); 
+		return -1; 
+	}
+
+	if(fork() == 0) {
+		int fifo;
+		char str[100] = "PRIMEIRO FILHO";
+		if ((fifo = open("minhaFifo2", O_WRONLY)) < 0) { 
+			puts ("Erro ao abrir a FIFO para escrita"); 
+			return -1; 
+		} 
+		printf("Escrito primeira msg no FIFO\n");
+		write(fifo, str, sizeof(str));
+		close(fifo);
+	}
+	else {
+		if(fork() == 0) {
+			int fifo;
+			char str[100] = "SEGUNDO FILHO";
+			if ((fifo = open("minhaFifo2", O_WRONLY)) < 0) { 
+				puts ("Erro ao abrir a FIFO para escrita"); 
+				return -1; 
+			} 
+
+			printf("Escrito segunda msg no FIFO\n");
+			write(fifo, str, sizeof(str));
+			close(fifo);
+		}
+		else{
+			int fifo;
+			char str[100];
+
+			if ((fifo = open("minhaFifo2", O_RDONLY)) < 0) { 
+				puts ("Erro ao abrir a FIFO para escrita"); 
+				return -1; 
+			}
+			waitpid(-1,NULL,0);
+			waitpid(-1,NULL,0);
+
+
+			while (read(fifo, str, 100*sizeof(char)) > 0 ){
+				printf("Lido do Fifo: %s\n",str);
+			}
+			close(fifo);
+		}
+	}
+
+	return 0;
+} 
+

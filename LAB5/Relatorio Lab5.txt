@@ -1,0 +1,172 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Aluno: João Pedro Garcia
+Matricula: 1211768
+
+
+Lab 5
+_____
+Enunciado:
+1) Faça um programa para criar dois processos que se comunicam via pipe. O Pai lê do pipe enquanto o filho escreve no pipe. Exiba o resultado do que foi escrito e lido. 
+Execução:
+gcc -Wall -o LAB5-EX1 LAB5-EX1.c
+./LAB5-EX1
+
+Saída:
+Pai, feliz dia dos pais
+
+Reflexão/Justificativa: 
+O pipe de leitura é fechado no filho e o de escrita no pai porque são desnecessarias e o filho passa a mensagem 
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+int main (void) {
+
+	int fd[2];
+	const char textoTX[] = "Pai, feliz dia dos pais";
+	char textoRX[sizeof textoTX]; 
+
+
+	pipe(fd);
+	if (fork() == 0) {
+		close(fd[0]);
+		write(fd[1],textoTX, strlen(textoTX)+1);
+	}
+	else {
+		close(fd[1]);
+		read(fd[0], textoRX, sizeof textoRX); 
+		printf("%s\n",textoRX);
+	}
+
+	return 0;
+}
+
+_____
+Enunciado:
+2) Faça um programa para redirecionar a entrada e a saída, lendo os dados de um arquivo e gerando a saída em outro. 
+
+Execução:
+gcc -Wall -o LAB5-EX2 LAB5-EX2.c
+./LAB5-EX2
+(em arquivo entrada.txt)
+10
+20
+30
+40
+50
+
+
+Saída:
+(em saida.txt)
+Mult: 100
+Mult: 200
+Mult: 300
+Mult: 400
+Mult: 500
+
+Reflexão/Justificativa:
+Abrimos os arquivos entrada.txt e saida.txt em fd e fd2, fechamos o stdin e stdout dando dup nos respectivos arquivos. Depois disso lemos da saida padrao inteiros e escrevemos na saida padrao (no caso saida.txt) seu multiplo por 10.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main (void) {
+
+	int fd,fd2;
+	int aux;
+
+
+	if ((fd=open("entrada.txt", O_RDONLY,0666)) == -1)  {
+		return -1;
+	}
+	if ((fd2=open("saida.txt", O_WRONLY|O_CREAT,0666)) == -1)  {
+		return -1;
+	}
+	
+	close(0);
+	if (dup(fd) == -1) {
+		return -2;	
+	}
+	close(1);
+	if (dup(fd2) == -1) {
+		return -3;	
+	}
+	
+
+	while (scanf("%d",&aux) != -1) {
+		printf("Mult: %d\n",aux*10);
+	}
+	
+	return 0;
+}
+
+
+_____
+Enunciado:
+3) Faça um programa para criar um pipe e executar dois processos que são utilitários do Unix que se comuniquem através do pipe criado (a shell faz isso). 
+
+Execução:
+gcc -Wall -o LAB5-EX3 LAB5-EX3.c
+./LAB5-EX3
+
+Saída:
+entrada.txt
+LAB5-EX1
+LAB5-EX1.c
+LAB5-EX2
+LAB5-EX2.c
+LAB5-EX3
+LAB5-EX3.c
+Relatorio Lab5.txt
+Relatorio Lab5.txt~
+saida.txt
+
+
+Reflexão/Justificativa: 
+Colocamos na saida de 'ls' a escrita do pipe e a entrada de 'cat' a leitura do pipe, fazendo com que ls passe sua saida como entrada para o cat.
+Nesse caso cat imprime os arquivos contidos na pasta de forma diferente do ls (por quebrar linha) e é interessante notar tb que o cursor não libera como se o programa ainda estivesse em execução, isso devido, acredito eu, pelo cat não ter lido nenhum final de arquivo ou algo do genero.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main (void) {
+
+	int fd[2];
+
+	pipe(fd);
+
+	if (fork() == 0) {
+		char *argv[] = {"ls", NULL};
+		close(1);
+		dup2(fd[1],1);
+		execv("/bin/ls",argv);
+
+	}
+	else {
+		char *argv[] = {"cat", NULL};
+		close(0);
+		dup2(fd[0],0);
+		execv("/bin/cat",argv);
+	}	
+
+	return 0;
+}
+
+

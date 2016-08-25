@@ -1,0 +1,294 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Aluno: João Pedro Garcia
+Matricula: 1211768
+
+Lab 8
+_____
+Enunciado:
+1) Implemente um programa que crie 2 threads:
+Uma delas (contCrescente) contará de 1 a N=20 (com pausas de T1=1 segundo)
+A outra (contDecrescente) de M=30 a 1 (com pausas de T2=2 segundos).
+Compile com a opção –l pthread 
+
+Execução:
+gcc -Wall -o LAB8-EX1 LAB8-EX1.c -l pthread
+./LAB8-EX1
+
+Saída:
+30
+1
+2
+29
+3
+4
+28
+5
+6
+27
+7
+8
+26
+9
+10
+25
+11
+12
+24
+13
+14
+23
+15
+16
+22
+17
+18
+21
+19
+20
+20
+19
+18
+17
+....
+
+Reflexão/Justificativa:
+
+As duas threads são criadas e executadas em paralelo no mesmo processo. Exercicio só para ver o codigo do slide funcionando.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#define NUM_THREADS 2
+
+void *contCrescente (void *threadid)  {
+	int i;
+	for (i = 1; i <=20; i++) {
+		printf("%d\n",i);
+		sleep(1);
+	}
+        pthread_exit(NULL); 
+}
+void *contDecrescente (void *threadid)  {
+	int i;
+	for (i = 30; i >=1; i--) {
+		printf("%d\n",i);
+		sleep(2);
+	}
+	pthread_exit(NULL);
+}
+
+int main (void) {
+
+	pthread_t threads[NUM_THREADS];  
+
+	pthread_create(&threads[0], NULL, contCrescente, (void *)0); 
+	pthread_create(&threads[1], NULL, contDecrescente, (void *)1); 
+
+	pthread_join(threads[0],NULL);
+	pthread_join(threads[1],NULL);
+
+	return 0;
+}
+
+
+_____
+Enunciado:
+2) Acrescente agora uma variável global inteira que é inicializada com zero, incrementada e impressa na tela por cada thread. Verifique que ambas as threads manipulam a mesma variável. 
+
+Execução:
+gcc -Wall -o LAB8-EX2 LAB8-EX2.c -l pthread
+./LAB8-EX2
+
+Saída:
+0
+1
+2
+3
+4
+5
+...
+
+Reflexão/Justificativa:
+Por serem duas threads do mesmo processos, compartilham o mesmo espaço de memoria, fazendo com que a variavel acessada pelas duas threads sejam a mesma.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#define NUM_THREADS 2
+
+static int iglobal = 0 ;
+
+void *contCrescente (void *threadid)  {
+	int i;
+	for (i = 1; i <=20; i++) {
+		printf("%d\n",iglobal++);
+		sleep(1);
+	}
+        pthread_exit(NULL); 
+}
+void *contDecrescente (void *threadid)  {
+	int i;
+	for (i = 30; i >=1; i--) {
+		printf("%d\n",iglobal++);
+		sleep(2);
+	}
+	pthread_exit(NULL);
+}
+
+int main (void) {
+
+	pthread_t threads[NUM_THREADS];  
+
+	pthread_create(&threads[0], NULL, contCrescente, (void *)0); 
+	pthread_create(&threads[1], NULL, contDecrescente, (void *)1); 
+
+	pthread_join(threads[0],NULL);
+	pthread_join(threads[1],NULL);
+
+	return 0;
+}
+
+
+____
+Enunciado:
+
+3) Usando threads, escreva um programa C que implemente o problema do produtor/consumidor. O produtor e o consumidor devem ser threads de execução dentro do mesmo processo compartilhando os recursos do processo. O produtor deve produzir dados (números inteiros pseudo-aleatórios) a cada 1 segundo colocando-os em uma fila (buffer, implementação circular). O consumidor deve retirar dados da fila a cada 2 segundos. O tamanho máximo da fila deve ser de 8 elementos (MAXFILA) e tanto o produtor como o consumidor devem produzir/consumir 64 elementos (números inteiros de 1 a 64, por exemplo) evitando condições de corrida. Variáveis compartilhadas entre threads são simplesmente variáveis globais.
+Para compilar o programa, utilize a opção -lpthread
+
+Execução:
+gcc -Wall -o LAB8-EX3 LAB8-EX3.c -l pthread
+./LAB8-EX3
+
+Saída:
+PRODUZI: 62
+PRODUZI: 57
+CONSUMI:62
+PRODUZI: 41
+PRODUZI: 50
+CONSUMI:57
+PRODUZI: 51
+PRODUZI: 1
+CONSUMI:41
+PRODUZI: 19
+PRODUZI: 34
+
+
+Reflexão/Justificativa:
+Talvez fosse necessario usar mutex para tratar concorrencia na estrutura fila, professor falou que essa solução estava suficiente. Para evitar busy waits é feito um teste se a fila nao esta cheia/vazia dando um continue no while
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <time.h>
+#define NUM_THREADS 2
+#define N 8
+
+struct fila {
+	int n;
+	int ini;
+	int vet[N];
+};
+typedef struct fila Fila;
+
+
+static Fila *f;
+
+
+Fila* fila_cria (void) {
+	Fila* f = (Fila*) malloc(sizeof(Fila));
+	f->n = 0;     
+	f->ini = 0;
+	return f;
+}
+int fila_vazia(Fila *f) {
+	if (f->n == 0)
+		return 1;
+	return 0;
+}
+
+void fila_insere (Fila* f, int v) {
+	int fim;
+	if (f->n == N) {   
+		/* fila cheia: capacidade esgotada */
+		printf("Capacidade da fila estourou.\n");
+		exit(1);         
+		/* aborta programa */
+	}
+	/* insere elemento na próxima posição livre */
+	fim = (f->ini + f->n) % N;
+	f->vet[fim] = v;
+	f->n++;
+}
+int fila_retira (Fila* f){ 
+	int v;
+	if (fila_vazia(f)) {
+		printf("Fila vazia.\n");
+		exit(1);         
+		/* aborta programa */
+	}
+	/* retira elemento do início */
+	v = f->vet[f->ini];
+	f->ini = (f->ini + 1) % N;
+	f->n--;
+	return v;
+}
+
+void *produtor (void *threadid)  {
+	int i;
+
+	for (i = 1; i <=64;) {
+		int random;
+		srand(time(NULL));
+		random = rand() % 64;
+		if (f->n >= N) {
+			sleep(1);
+			continue;
+		}
+		printf("PRODUZI: %d\n",random);
+		fila_insere(f,random);
+		sleep(1);
+		i++;
+		
+	}
+        pthread_exit(NULL); 
+}
+void *consumidor (void *threadid)  {
+	int i;
+	for (i = 30; i >=1;) {
+		if (f->n == 0) {
+			sleep(2);
+			continue;		
+		}
+		printf("CONSUMI:%d\n",fila_retira(f));
+		sleep(2);
+		i--;
+	}
+	pthread_exit(NULL);
+}
+
+
+
+int main (void) {
+
+	pthread_t threads[NUM_THREADS];  
+	f = fila_cria();
+	pthread_create(&threads[0], NULL, produtor, (void *)0); 
+	pthread_create(&threads[1], NULL, consumidor, (void *)1); 
+
+	pthread_join(threads[0],NULL);
+	pthread_join(threads[1],NULL);
+
+
+	return 0;
+}

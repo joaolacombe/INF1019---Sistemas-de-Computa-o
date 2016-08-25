@@ -1,0 +1,7 @@
+exec programa7
+exec programa1
+exec programa2
+exec programa6
+exec programa3
+exec programa4
+exec programa5

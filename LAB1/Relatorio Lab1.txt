@@ -1,0 +1,241 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Lab 1
+_____
+Enunciado:
+1) Faça um programa para criar dois processos, o pai escreve seu pid e espera o
+filho terminar e o filho escreve o seu pid e termina. 
+
+Execução:
+gcc -Wall -o LAB1-EX1 LAB1-EX1.c
+./LAB1-EX1
+
+Saída:
+Pai pid: 9719
+Filho pid: 9720
+
+Reflexão/Justificativa:
+Fork retorna 0 para o processo filho então o pai executa o bloco dentro do if e o filho executa o bloco dentro do else.
+
+Codigo Fonte:
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdio.h>
+
+int main () {
+	
+	int filho_pid = fork();
+	
+	if (filho_pid != 0 ) { 
+		int status;
+		printf("Pai pid: %d\n", getpid());
+		waitpid(filho_pid,&status,0);
+	}
+	else {
+		printf("Filho pid: %d\n", getpid());
+	}
+	return 0;
+}
+
+_____
+Enunciado:
+2) Agora, usando a mesma estrutura de processos pai e filho, declare uma
+variável visível ao pai e ao filho, no pai inicialize a variável com1 e imprima seu
+valor antes do fork(). No filho, altere o valor da variável para 5 e imprima o seu
+valor antes do exit(). Agora, no pai, imprima novamente o valor da variável após o
+filho ter alterado a variável - após a waitpid(). Justifique os resultados obtidos. 
+
+Execução:
+gcc -Wall -o LAB1-EX2 LAB1-EX2.c
+./LAB1-EX2
+
+Saída:
+Valor: 1
+Valor no processo filho: 5
+Valor no processo pai: 1
+
+Reflexão/Justificativa:
+Mesmo a variável sendo visível para o pai e o filho os dois tem areas de memoria diferentes, ou seja, a variável do processo pai e do processo filho são distintas, fazendo com que alteração de valor no processo filho não tenha nenhum impacto sobre o valor no processo pai.
+
+Codigo Fonte:
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main () {
+
+	int filho_pid;
+	int valor = 1;
+	
+	printf("Valor: %d\n",valor);
+	filho_pid = fork();
+	
+	if (filho_pid != 0 ) { 
+		int status;
+		waitpid(filho_pid,&status,0);
+		printf("Valor no processo pai: %d\n",valor);
+}
+	else {
+		valor = 5;
+		printf("Valor no processo filho: %d\n",valor);
+		exit(1);
+}
+	return 0;
+}
+
+_____
+Enunciado:
+3) Use o programa anterior para ler e ordenar um vetor de 10 posições. O filho
+ordena o vetor e o pai exibe os dados do vetor antes do fork() e depois do waitpid
+(). Eles usarão o mesmo vetor na memória? Justifique. 
+
+Execução:
+gcc -Wall -o LAB1-EX3 LAB1-EX3.c
+./LAB1-EX3
+9
+5
+2
+3
+7
+4
+1
+8
+6
+10
+
+Saída:
+9 5 2 3 7 4 1 8 6 10 
+1 2 3 4 5 6 7 8 9 10 
+9 5 2 3 7 4 1 8 6 10 
+
+Reflexão/Justificativa:
+Não, pelos mesmos motivos da justificativa do enunciado 2, cada processo tem sua area de memória, são vetores distintos.
+
+Codigo Fonte:
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define MAX 10
+
+void imprime_vetor(int vet[],int n){
+	int i;
+	for(i=0;i<n;i++) {
+		printf("%d ",vet[i]);
+	}
+	printf("\n");
+}
+
+int cmpfunc (const void * a, const void * b) {
+   return ( *(int*)a - *(int*)b );
+}
+int main () {
+
+	int filho_pid;
+	int vet[MAX],i;
+	
+	for(i=0;i<MAX;i++) {
+		scanf("%d",&vet[i]);		
+	}
+
+	imprime_vetor(vet,10);
+	filho_pid = fork();
+	
+	if (filho_pid != 0 ) { 
+		int status;
+		waitpid(filho_pid,&status,0);
+		imprime_vetor(vet,10);
+}
+	else {
+		qsort(vet,10,sizeof(int),cmpfunc);
+		imprime_vetor(vet,10);
+		exit(1);
+}
+	return 0;
+}
+
+_____
+Enunciado:
+4) Modifique o programa anterior para que o filho execute um programa elaborado
+por você, que mande imprimir uma mensagem qualquer no vídeo, por exemplo,
+“alo mundo”. Em seguida altere o programa do item 4 para o filho executar o
+programa echo da shell. (Primeira parte)
+
+Execução:
+gcc -Wall -o LAB1-EX4 LAB1-EX4.c
+./LAB1-EX4
+
+Saída:
+Pai pid: 10045
+Filho pid: 10046
+
+Reflexão/Justificativa:
+Processo filho executou	o programa do enunciado 1, mostrando sua saida.
+
+Codigo Fonte:
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdio.h>
+
+int main () {
+
+	int filho_pid;
+	
+	filho_pid = fork();
+	
+	if (filho_pid != 0 ) { 
+		int status;
+		waitpid(filho_pid,&status,0);
+	}
+	else {
+		char *envp[] = { NULL };
+		char *argv[] = { "./LAB1-EX1",NULL };
+		execve("LAB1-EX1",argv,envp);
+	}
+	return 0;
+}
+
+_____
+Enunciado:
+4) Modifique o programa anterior para que o filho execute um programa elaborado
+por você, que mande imprimir uma mensagem qualquer no vídeo, por exemplo,
+“alo mundo”. Em seguida altere o programa do item 4 para o filho executar o
+programa echo da shell. (Segunda parte)
+
+Execução:
+gcc -Wall -o LAB1-EX4-2 LAB1-EX4-2.c
+./LAB1-EX4-2
+
+Saída:
+Hello World
+
+Reflexão/Justificativa:
+O processo filho executou echo no diretorio bin, como ele espera o nome dele como primeiro argumento, foi impresso apenas o segundo "Hello World".
+
+Codigo Fonte:
+
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main () {
+
+	int filho_pid;
+	char *argv[] = { "echo", "Hello World", NULL };
+
+	filho_pid = fork();
+	
+	if (filho_pid != 0 ) {
+		int status;
+		waitpid(filho_pid,&status,0);
+	}
+	else {
+		execv("/bin/echo",argv);
+	}
+	return 0;
+}

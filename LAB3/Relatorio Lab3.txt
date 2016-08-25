@@ -1,0 +1,282 @@
+Aluno: Thiago Klein de Angelis
+		João Pedro Garcia
+Matricula: 1321929
+		   1211768
+
+Lab 3
+_____
+Enunciado:
+1) Execute o programa 
+“ctrl-c.c”.  
+Digite Ctrl-C e Ctrl-\. Analise o resultado.
+Neste mesmo programa,remova os comandos signal( ) e repita o teste anterior observando os resultados. 
+
+Execução (p/ os dois programas):
+gcc -Wall -o ctrlc ctrl-c.c
+./ctrlc
+^C
+^\
+
+
+
+Saída (Programa1):
+Endereco do manipulador anterior (nil)
+Endereco do manipulador anterior (nil)
+Ctrl-C desabilitado. Use Ctrl-\ para terminar
+Você pressionou Ctrl-C
+Terminando o processo...
+
+Saída (Programa2):
+Quit (core dumped)
+
+
+Reflexão/Justificativa:
+Ao usar o handler para o SIGINT E SIGQUIT ao invés de tratar o sinal normalmente, o programa chama a função handler do sinal correspondente.
+No segundo programa comentando os handlers ele executa o tratamento default de sinais, no caso do ctrl+c para a execução e no ctrl+\ aborta dando a saída acima.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#define EVER ;;
+void intHandler(int sinal);
+void quitHandler(int sinal);
+int main (void) { 
+	
+	
+	void (*p)(int);
+	// ponteiro para função que recebe int como 
+	// parâmetro 
+
+	
+	p = signal(SIGINT, intHandler); 
+	printf("Endereco do manipulador anterior %p\n", p); 
+	p = signal(SIGQUIT, quitHandler); 
+	printf("Endereco do manipulador anterior %p\n", p); 
+	puts ("Ctrl-C desabilitado. Use Ctrl-\\ para terminar"); 
+	
+	for(EVER); 
+}
+void intHandler(int sinal) { 
+	puts ("Você pressionou Ctrl-C"); 
+}
+void quitHandler(int sinal) { 
+	puts ("Terminando o processo..."); 
+	exit (0); 
+} 
+
+___
+Programa2(ex1):
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#define EVER ;;
+void intHandler(int sinal);
+void quitHandler(int sinal);
+int main (void) { 
+	
+	/*
+	void (*p)(int);
+	// ponteiro para função que recebe int como 
+	// parâmetro 
+
+	
+	p = signal(SIGINT, intHandler); 
+	printf("Endereco do manipulador anterior %p\n", p); 
+	p = signal(SIGQUIT, quitHandler); 
+	printf("Endereco do manipulador anterior %p\n", p); 
+	puts ("Ctrl-C desabilitado. Use Ctrl-\\ para terminar"); 
+	*/
+	for(EVER); 
+}
+void intHandler(int sinal) { 
+	puts ("Você pressionou Ctrl-C"); 
+}
+void quitHandler(int sinal) { 
+	puts ("Terminando o processo..."); 
+	exit (0); 
+} 
+
+
+________________
+Enunciado:
+2) Tente fazer um programa para interceptar o 
+sinal SIGKILL. Você conseguiu? Explique. 
+
+Execução:
+gcc -Wall -o sigkill sigkill.c
+./sigkill &
+kill -s KILL 19303
+
+Saída:
+Endereco do manipulador anterior 0xffffffffffffffff
+Use Ctrl-C para terminar
+[1]    Killed                        ./sigkill
+
+
+Reflexão/Justificativa:
+Não. Como SIGKILL não pode ser ignorado o código referente ao killHandler nunca será chamado. Ao receber o sinal(SIGKILL) o processo é terminado e a saída "Killed" aparece, ignorando totalmente a tentativa de tratar o SIGKILL.
+
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#define EVER ;;
+void killHandler(int sinal);
+int main (void) { 
+	
+	void (*p)(int);
+
+	p = signal(SIGKILL, killHandler); 
+	printf("Endereco do manipulador anterior %p\n", p); 
+	
+	puts ("Use Ctrl-C para terminar"); 
+	for(EVER); 
+}
+void killHandler(int sinal) { 
+	puts ("Você tentou dar kill"); 
+}
+
+
+________________
+Enunciado:
+3) Execute e explique o funcionamento de 
+filhocidio.c
+
+Execução:
+gcc -Wall -o filhocidio filhocidio.c
+./filhocidio 3 filho
+
+Saída:
+Program filho exceeded limit of 3 seconds!
+Child 19593 terminated within 3 seconds com estado 9.
+
+Reflexão/Justificativa:
+O processo pai vai tratar o sinal de SIGCHLD que é executado se o processo filho terminar antes, como o processo filho fica em loop, o pai pega o argumento (no caso 3), dorme por esse tempo, e ao acordar mata o processo filho, fazendo com que ele receba o sinal SIGCHLD, porém a execução do pai estava encerrando logo após a execução do kill sem tempo do sinal "chegar" por isso colocamos um "sleep(1)" depois por recomendações do professor.
+
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#include <unistd.h>
+#include <sys/wait.h>
+
+void childhandler(int signo);
+int delay;
+
+int main  (int argc, char *argv[]) { 
+	pid_t pid; 
+	signal(SIGCHLD, childhandler); 
+	if ((pid = fork()) < 0) { 
+		fprintf(stderr, "Erro ao criar filho\n"); 
+		exit(-1); 
+	} 
+	if (pid == 0) /* child */
+		while(1); /* ou sleep(3);*/ 
+	else/* parent */{ 
+		sscanf(argv[1], "%d", &delay); /* read delay from command line */
+		sleep(delay); 
+		printf("Program %s exceeded limit of %d seconds!\n", argv[2], delay); 
+		kill(pid, SIGKILL); 
+		sleep(1);
+	} 
+	return 0; 
+}
+void childhandler(int signo) /* Executed if child dies beforeparent */{ 
+	int status; 
+	pid_t pid = wait(&status); 
+	printf("Child %d terminated within %d seconds com estado %d.\n", pid, delay, status); 
+	exit(0); 
+} 
+
+_____
+Enunciado:
+4) Usando SIGSTOP e SIGCONT faça um programa que crie 2 processos filho e alterne a execução dos filhos. 
+Após 10 trocas de contexto, o processo pai mata os processos filho.
+OBS: Os processos filho são formados por loops infinitos. 
+
+
+Execução:
+gcc -Wall -o LAB3-EX4 LAB3-EX4.c
+./LAB3-EX4
+
+Saída:
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+[1] Executando filho pid: 7150.
+[2] Executando filho pid: 7151.
+Terminando execucao.
+
+
+Reflexão/Justificativa:
+Ao enviar o sinal SIGSTP o processo para execução e SIGCONT o processo retoma a execução, demos fork em dois filhos e fomos alternando a sua execução com um sleep no processo pai. Ao final finalizamos a execução deles com SIGKILL. Para testar se estava realmente alternando a execução nos rodamos em background e ficamos dando 'ps' para ver o 'TIME'.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#include <unistd.h>
+#include <sys/wait.h>
+#define TEMPOEXEC 2
+
+int main  (int argc, char *argv[]) { 
+	pid_t pid1,pid2; 
+	
+	if ((pid1 = fork()) < 0) { 
+		fprintf(stderr, "Erro ao criar filho\n"); 
+		exit(-1); 
+	} 
+	if (pid1 == 0){ /* child 1*/
+		while(1);printf("teste");}
+	else/* parent */{ 
+			if ((pid2 = fork()) < 0) { 
+				fprintf(stderr, "Erro ao criar filho 2\n"); 
+				exit(-1);
+			}
+			if (pid2 == 0) /* child 2*/
+				while(1);
+			else {
+				int i;
+				for (i = 0; i < 10; i++ ) {
+					kill(pid1, SIGCONT);
+					kill(pid2, SIGSTOP);
+					printf("[1] Executando filho pid: %d.\n",pid1); 
+					
+					sleep(TEMPOEXEC);
+					
+					kill(pid1, SIGSTOP);
+					kill(pid2,SIGCONT);
+					printf("[2] Executando filho pid: %d.\n",pid2);
+ 
+					sleep(TEMPOEXEC);		
+				}
+				kill(pid1, SIGKILL);
+				kill(pid2, SIGKILL); 
+				printf("Terminando execucao.\n");
+			}
+	} 
+	return 0; 
+}

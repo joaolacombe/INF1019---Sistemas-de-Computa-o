@@ -1,0 +1,2 @@
+exec programa1 numtickets= 3
+exec programa7 numtickets= 3

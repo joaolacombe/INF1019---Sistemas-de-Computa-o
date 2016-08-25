@@ -1,0 +1,297 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Lab 2
+_____
+Enunciado:
+1) Soma de matrizes
+Faça um programa para somar matrizes de acordo com o seguinte algoritmo 
+O primeiro processo irá criar duas matrizes preenchidas e uma terceira vazia em 3 áreas de memória compartilhada.
+Para cada linha da matriz solução, o seu programa deverá gerar um processo para o seu cálculo. 
+
+Execução:
+gcc -Wall -o LAB2-EX1 LAB2-EX1.c
+./LAB2-EX1
+
+Saída:
+Primeira matriz
+1 3 5 10 
+3 5 7 8 
+5 8 7 3 
+5 2 3 6 
+Segunda matriz
+6 4 1 3 
+2 0 4 9 
+5 2 8 5 
+6 2 1 5 
+Terceira matriz
+7 7 6 13 
+5 5 11 17 
+10 10 15 8 
+11 4 4 11 
+
+Reflexão/Justificativa:
+	Achei curioso o fato de a shell não esperar ou não indentificar o processo pai terminar, liberando o controle para outros comandos, segundo professor isso não é um problema. Criei a matriz como um vetor, no exemplo trabalhei com matrizes 4x4 representados em um vetor de 16 posições. As duas matrizes estao sendo preenchidas com a função rand()%10
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <time.h>
+
+void preenche_matriz(int *matriz,int nlinhas, int ncolunas) {
+	int i,j;
+	for (i=0; i < nlinhas; i++) {
+		for (j=0; j < ncolunas; j++) {
+			matriz[i*ncolunas+j] = rand()%11;
+		}
+	}
+}
+void imprime_matriz(int *matriz,int nlinhas, int ncolunas) {
+	int i,j;
+	for (i=0; i < nlinhas; i++) {
+		for (j=0; j < ncolunas; j++) {
+			printf("%d ",matriz[i*ncolunas+j]);
+		}
+		printf("\n");
+	}
+}
+
+int main (int argc,char *argv[]) { 
+	int seg1, seg2, seg3;
+	int *m1, *m2, *m3;
+	int id, status, nrows = 4, ncolumns = 4,i,qtdfilhos; 
+
+	//seed para preencher matriz
+	srand ( time(NULL) );
+	
+	seg1 = shmget (IPC_PRIVATE, sizeof (int)*nrows*ncolumns, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	if (seg1 == -1) {
+		puts ("Erro na criação de segmento de memoria compartilhada.");
+		exit(1);
+	}
+	m1 = (int *) shmat (seg1, 0, 0);
+
+	seg2 = shmget (IPC_PRIVATE, sizeof (int)*nrows*ncolumns, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	if (seg2 == -1) {
+		puts ("Erro na criação de segmento de memoria compartilhada.");
+		exit(1);
+	}
+	m2 = (int *) shmat (seg2, 0, 0);
+
+	seg3 = shmget (IPC_PRIVATE, sizeof (int)*nrows*ncolumns, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	if (seg3 == -1) {
+		puts ("Erro na criação de segmento de memoria compartilhada.");
+		exit(1);
+	}
+	m3 = (int *) shmat (seg3, 0, 0);
+
+	preenche_matriz(m1,nrows,ncolumns);
+	preenche_matriz(m2,nrows,ncolumns);
+	
+	printf("Primeira matriz\n");
+	imprime_matriz(m1,nrows,ncolumns);
+	
+	printf("Segunda matriz\n");
+	imprime_matriz(m2,nrows,ncolumns);
+
+	for (qtdfilhos = 0; qtdfilhos < nrows; qtdfilhos++) {
+		id = fork();
+		if (id < 0) { 
+			puts ("Erro na criação do novo processo"); 
+			exit (-2); 
+		} 
+		if (id != 0) {
+			int j,index = qtdfilhos*ncolumns;
+			for (j = 0; j < ncolumns; j++) {
+				m3[index] = m1[index] + m2[index];
+				index++;
+			}
+			break;
+		}
+	}
+	if (id == 0) {
+		for(i=0;i<qtdfilhos;i++){
+			waitpid(-1,&status,0);
+		}
+		printf("Terceira matriz\n");
+		imprime_matriz(m3,nrows,ncolumns);
+	}
+
+	shmdt (m1); 
+	shmctl (seg1, IPC_RMID, 0); 
+	shmdt (m2); 
+	shmctl (seg2, IPC_RMID, 0); 
+	shmdt (m3); 
+	shmctl (seg3, IPC_RMID, 0);
+
+	return 0; 
+} 
+
+_____
+Enunciado:
+
+2) Mensagem do Dia
+Faça um programa que:
+Leia uma mensagem do dia
+Crie uma memória compartilhada com a chave 8752
+Salve a mensagem na memória
+Faça um outro programa que utilize a mesma chave (8752) e exiba a mensagem do diapara o usuário 
+
+Execução:
+gcc -Wall -o LAB2-EX2 LAB2-EX2.c
+gcc -Wall -o LAB2-EX2-2 LAB2-EX2-2.c
+./LAB2-EX2
+Viva seus sonhos!
+./LAB2-EX2-2
+
+Saída:
+Insira mensagem do dia
+Mensagem do dia: Viva seus sonhos!
+
+Reflexão/Justificativa:
+Esse exercicio em particular eu achei muito bom, pois entendi como funciona apenas dar detach e de fato apagar o segmento de memoria compartilhada. Inclusive se rodar 2 vezes consecutivas o primeiro programa deve dar um erro pois estou usando a flag IPC_EXCL, já que o segundo programa está reponsavel por "apagar". Eu crio o segmento com um id especifico e apenas dou detach, no outro programa usando o mesmo id e tamanho da area de memoria eu dou attach nessa area acessando o valor lido no primeiro.
+
+Codigo Fonte:
+
+//LAB2-EX2
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <string.h>
+#define MEM_KEY 8752
+#define MAX_LENGTH 141
+
+int main (int argc,char *argv[]) {
+
+	int segment=0; 
+	char msg[MAX_LENGTH],*mday;
+
+	printf("Insira mensagem do dia\n");
+	scanf(" %140[^\n]",msg);
+
+	segment = shmget (MEM_KEY, sizeof(char)*MAX_LENGTH, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	if (segment == -1) {
+		puts ("Erro na criação de segmento de memoria compartilhada.");
+		exit(1);
+	}
+	mday = (char *) shmat (segment, 0, 0);
+	strcpy(mday,msg);
+
+	shmdt (mday); 
+
+	return 0;
+}
+
+________________
+Segundo programa:
+
+
+//LAB2-EX2-2
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#define MEM_KEY 8752
+#define MAX_LENGTH 141
+
+int main (int argc,char *argv[]) {
+
+	int segment=0; 
+	char *mday;
+
+	segment = shmget (MEM_KEY, sizeof(char)*MAX_LENGTH, S_IRUSR |  S_IWUSR);
+	if (segment == -1) {
+		printf("Erro segment.\n");
+		exit(1);
+	}
+	mday = (char *) shmat (segment, 0, 0);
+
+	printf("Mensagem do dia: %s\n",mday);
+
+	shmdt (mday); 
+	shmctl (segment, IPC_RMID, 0); 
+
+	return 0;
+}
+
+_____
+Enunciado:
+3) Busca paralela em vetor
+Faça um programa paralelo para localizar uma chave em um vetor.
+Crie uma memória compartilhada com dados numéricos inteiros e desordenados e a divida pelo número de processos
+Cada processo deve procurar o dado na sua área de memória e informar a posição onde o dado foi localizado. 
+
+Execução:
+gcc -Wall -o LAB2-EX3 LAB2-EX3.c
+./LAB2-EX3
+
+Saída:
+Procurado esta na posicao 5
+
+Reflexão/Justificativa:
+Esse exercicio eu fiquei um pouco confuso pelo enunciado ficar em aberto. Entendi que bastava printar o index do procurado no vetor fazendo com que o processo pai não precise nem esperar pelos processos filhos. O processo pai sai criando três processos para procurar em um vetor de 9 posições, logo cada processo fica responsável por procurar em 3 posições, para fazer isso fui adicionando 3 a variavel ini antes forks (menos do primeiro porque ini = 0)..
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define PROC 50
+
+void verifica_erro(int id) {
+	if ( id < 0) { 
+		puts ("Erro na criação do novo processo"); 
+		exit (-2); 
+	}
+}
+
+int main () {
+
+	int *vet, n = 9, vaux[9] = {30,10,90,40,60,50,70,20,80};
+	int segment, id;
+	int ini = 0,i;
+
+	segment = shmget (IPC_PRIVATE, sizeof(int)*n, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	if (segment == -1) {
+	puts ("Erro na criação de segmento de memoria compartilhada."); 
+		exit(1);
+	}
+
+	vet = (int*) shmat (segment, 0, 0);
+	for (i = 0; i < n; i++) {
+		vet[i] = vaux[i];
+	}
+
+	id = fork();
+	verifica_erro(id);
+	if (id != 0) {
+		ini += 3;
+		id = fork();
+		verifica_erro(id);
+		if ( id != 0) {
+			ini+=3;
+			id = fork();
+			verifica_erro(id);
+		}
+	}
+	if (id == 0) {
+		for(i=0; i < 3; i++) {	
+			if(vet[i+ini] == PROC) {
+				printf("Procurado esta na posicao %d\n", i+ini);
+			}
+		}
+	}
+
+	shmdt (vet); 
+	shmctl (segment, IPC_RMID, 0); 
+
+	return 0;
+}

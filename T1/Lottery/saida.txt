@@ -1,0 +1,65 @@
+Escalonamento escolhido: LOTERIA
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa1
+Pid: 560
+Bilhetes: 12 1 14 17 
+---------------
+
+Bilhete sorteado: 12
+Em execucao - Programa programa1 - Pid 560
+Programa programa1 terminou sua execução...
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa2
+Pid: 561
+Bilhetes: 18 11 0 19 
+---------------
+
+Bilhete sorteado: 0
+Em execucao - Programa programa2 - Pid 561
+Programa programa2 terminou sua execução...
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa3
+Pid: 562
+Bilhetes: 17 7 5 1 
+---------------
+
+Bilhete sorteado: 1
+Em execucao - Programa programa3 - Pid 562
+Programa programa3 terminou sua execução...
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa4
+Pid: 563
+Bilhetes: 17 2 13 18 
+---------------
+
+Bilhete sorteado: 17
+Em execucao - Programa programa4 - Pid 563
+Programa programa4 terminou sua execução...
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa5
+Pid: 564
+Bilhetes: 2 5 14 11 
+---------------
+
+Bilhete sorteado: 5
+Em execucao - Programa programa5 - Pid 564
+Pausando - Programa programa5
+
+Bilhete sorteado: 2
+Em execucao - Programa programa5 - Pid 564
+Programa programa5 terminou sua execução...
+

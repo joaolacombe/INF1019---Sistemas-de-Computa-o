@@ -1,0 +1,297 @@
+Aluno: Thiago Klein de Angelis
+Matricula: 1321929
+
+Lab 4
+_____
+Enunciado:
+5) Faça um programa que leia 2 números e imprima o resultado das 4 operações básicas sobre estes 2 números.
+Verifique o que acontece se o 2º. número da entrada for 0 (zero).
+Capture o sinal de erro de floating point(SIGFPE) e repita a experiência anterior.
+
+Execução:
+gcc -Wall -o LAB4-EX1 LAB4-EX1.c
+./LAB4-EX1
+24
+0
+
+Saída (sem capturar sinal):
+Insira 2 numeros.
+Soma 24
+Diferenca 24
+Multiplicacao: 0
+Floating point exception (core dumped)
+
+Saída (com captura sinal):
+Endereco do manipulador anterior (nil)
+Insira 2 numeros.
+Soma 24
+Diferenca 24
+Multiplicacao: 0
+Divisão nao pode ser feita por 0!
+
+Reflexão/Justificativa: 
+Aprendi que naturalmente o processo não tem um manipulador e termina ao tentar fazer uma divisão por 0. Ao adiciona-lo, o programa entrava em loop, provavelmente por tentar dividir por 0,receber o sinal, tratar o sinal e voltar para a instrução tentando dividir por 0 novamente, criando esse ciclo. Para isso não acontecer dei um exit.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+
+void handler (int sinal);
+
+int main (void) {
+
+	int n1,n2;
+	
+	/* Comente para remover o tratador */
+	void (*p)(int);
+	
+	p = signal(SIGFPE, handler); 
+	printf("Endereco do manipulador anterior %p\n", p);
+
+	/**********************************/
+
+	printf("Insira 2 numeros.\n");
+	scanf("%d %d",&n1,&n2);
+
+	printf("Soma %d\n",n1+n2);
+	printf("Diferenca %d\n",n1-n2);
+	printf("Multiplicacao: %d\n",n1*n2);
+	printf("Divisao: %d\n",n1/n2);
+	
+
+	return 0;
+}
+
+void handler (int sinal) {
+	printf("Divisão nao pode ser feita por 0!\n");
+	exit(1);
+}
+_____
+Enunciado:
+
+6) Faça um programa para monitorar e informar o preço de chamadas telefônicas. O programa deverá ser executado em background.
+O início e o término de uma chamada são informados através dos sinais SIGUSR1 e SIGUSR2, respectivamente.
+O custo da ligação é de 2 centavos por segundo, para ligações de até 1 minuto ou de 1 centavo por segundo a partir do 2º. minuto, ou seja, uma ligação de 1m30s custa R$1,50. 
+
+Execução:	
+gcc -Wall -o LAB4-EX2 LAB4-EX2.c
+./LAB4-EX2 &
+kill -s USR1 4596
+kill -s USR2 4596
+kill 4596
+
+Saída:
+Endereco do manipulador anterior SIGUSR1 (nil)
+Endereco do manipulador anterior SIGUSR2 (nil)
+Chamada recebida!
+Chamada terminada. Duracao: 1 m 30 s 
+Custo ligacao: R$1,50
+
+
+Reflexão/Justificativa:
+Por usar o ubuntu também o nome do sinal é diferente, no caso do ubuntu é "kill -s SIGUSR1" .. e no fedora algo tipo "kill -s SIGUSR2" mas acho que isso é irrelevante. Não tratei outros casos alem de apenas receber um SIGUSR1 seguido de um SIGUSR2, professor falou que não era necessario.
+Não sei o que falar mais sobre o exercicio é só uma forma de usar o que ja praticamos em outros exercicios.
+
+Codigo Fonte:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <time.h>
+
+void chamadaRecebida (int sinal);
+void chamadaTerminada (int sinal);
+
+static time_t ini_t;
+
+int main (void) {
+
+	void (*p)(int), (*p2)(int);
+	
+	p = signal(SIGUSR1, chamadaRecebida); 
+	printf("Endereco do manipulador anterior SIGUSR1 %p\n", p); 
+	p2 = signal(SIGUSR2, chamadaTerminada); 
+	printf("Endereco do manipulador anterior SIGUSR2 %p\n", p2);
+
+	while(1);
+
+	return 0;
+}
+
+void chamadaRecebida (int sinal) {
+	printf("Chamada recebida!\n");
+	time(&ini_t);
+}
+void chamadaTerminada (int sinal) {
+	time_t diff_t;
+	time_t final_t;
+	long int custoCentavos = 0;	
+
+	time(&final_t);
+	diff_t = difftime(final_t, ini_t);
+	printf("Chamada terminada. Duracao: %li m %li s \n",diff_t/60, diff_t%60);
+	
+	if( diff_t <= 60) {
+		custoCentavos = diff_t*2;
+	}
+	else {
+		custoCentavos = 60*2;
+		diff_t -= 60;
+		custoCentavos += diff_t;	
+	}
+	printf("Custo ligacao: R$%li,%02li\n",custoCentavos/100,custoCentavos%100);
+}
+
+_____
+Enunciado:
+7) Elabore três programas I/O bound que não terminem (loop de msgs no vídeo).
+Elabore um programa que seja capaz de executar os 3 programas indicados anteriormente e que simule o compartilhamento da CPU entre os 3 processos com escalonamento Round-Robin com uma fatia de tempo de 1 segundo para o primeiro processo e de 2 segundos para os demais processos.
+Execute os programas e relate o que aconteceu.
+
+Execução:
+gcc -Wall -o p1 p1.c
+gcc -Wall -o p2 p2.c
+gcc -Wall -o p3 p3.c
+gcc -Wall -o LAB4-EX3 LAB4-EX3.c
+./LAB4-EX1 p1 p2 p3
+^C (para parar a execução)
+
+Saída:
+IO BOUND 1
+IO BOUND 1
+...(1 segundo depois)
+IO BOUND 2
+IO BOUND 2
+...(2 segundos depois)
+IO BOUND 3
+IO BOUND 3
+...(2 segundos depois volta pro IO BOUND 1)
+
+
+Reflexão/Justificativa:
+
+Para execução de três programas foi necessario dar 3 forks, cada processo filho da um execv em um dos programas a ser executado, e o pai da SIGSTOP neles. Ao criar os 3 processos dos programas a serem executados é feito um loop onde o processo pai deixa apenas um executando e dorme a fatia de tempo destinada a execução dele. Esse processo é feito na ordem p1 p2 p3 e com a fatia de tempo especificada no enunciado.
+
+Codigo Fonte:
+____________________
+//PROGRAMA 1
+#include <stdio.h>
+
+
+int main (void) {
+
+	while(1) {
+		printf("IO Bound 1\n");
+	}
+
+	return 0;
+}
+
+___________________
+//PROGRAMA 2
+#include <stdio.h>
+
+
+int main (void) {
+
+	while(1) {
+		printf("IO Bound 2\n");
+	}
+
+	return 0;
+}
+
+__________________
+//PROGRAMA 3
+#include <stdio.h>
+
+
+int main (void) {
+
+	while(1) {
+		printf("IO Bound 3\n");
+	}
+
+	return 0;
+}
+__________
+//LAB4-EX3 CODIGO
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h> 
+#include <unistd.h>
+#include <sys/wait.h>
+
+
+
+int main  (int argc, char *argv[]) { 
+	pid_t pid1,pid2,pid3; 
+	char *p1,*p2,*p3;
+
+	p1 = argv[1];
+	p2 = argv[2];
+	p3 = argv[3];
+	printf("%s %s %s\n",p1,p2,p3);
+
+
+	if ((pid1 = fork()) < 0) { 
+		fprintf(stderr, "Erro ao criar filho\n"); 
+		exit(-1); 
+	} 
+	if (pid1 == 0) {
+		char *const args[] = {p1, 0};		
+		execv(p1,args);
+	}
+	else{ 
+		kill(pid1,SIGSTOP);
+		if ((pid2 = fork()) < 0) { 
+			fprintf(stderr, "Erro ao criar filho\n"); 
+			exit(-1); 
+		} 
+		if (pid2 == 0) {
+			char *const args[] = {p2, 0};
+			execv(p2,args);
+		}
+		else {
+			kill(pid2,SIGSTOP);
+			if ((pid3 = fork()) < 0) { 
+				fprintf(stderr, "Erro ao criar filho\n"); 
+				exit(-1); 
+			} 
+			if (pid3 == 0) {
+				char *const args[] = {p3, 0};	
+				execv(p3,args);
+			}
+			else {
+				kill(pid3,SIGSTOP);
+				while(1) {
+					kill(pid1,SIGCONT);
+					kill(pid3,SIGSTOP);
+					sleep(1);
+					kill(pid1,SIGSTOP);
+					kill(pid2,SIGCONT);
+					sleep(2);
+					kill(pid2,SIGSTOP);
+					kill(pid3,SIGCONT);
+					sleep(2);
+		
+				}
+
+
+			}
+
+
+
+
+
+		}
+
+	} 
+
+	return 0; 
+}

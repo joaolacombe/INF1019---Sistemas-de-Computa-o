@@ -1,0 +1,127 @@
+Escalonamento escolhido: ROUND ROBIN
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa7
+Pid: 657
+---------------
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa5
+Pid: 659
+---------------
+
+Em execucao - Programa programa5 - Pid 659
+Pausando - Programa programa5
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa5 - Pid 659
+Pausando - Programa programa5
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa5 - Pid 659
+Pausando - Programa programa5
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+
+ -----------
+Entrada de novo processo na fila
+Nome: programa6
+Pid: 660
+---------------
+
+Em execucao - Programa programa5 - Pid 659
+Programa programa5 terminou sua execução...
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Pausando - Programa programa7
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa7 - Pid 657
+Programa programa7 terminou sua execução...
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa6 - Pid 660
+Pausando - Programa programa6
+
+Em execucao - Programa programa6 - Pid 660
+Programa programa6 terminou sua execução...
+
